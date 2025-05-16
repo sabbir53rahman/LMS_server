@@ -37,7 +37,18 @@ const getLessonsByCourse = async (req, res) => {
   }
 };
 
+const getLessonById = async (req, res) => {
+  try {
+    const lesson = await Lesson.findById(req.params.lessonId);
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+    res.json(lesson);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
 export const lessonController = {
   addLesson,
   getLessonsByCourse,
+  getLessonById,
 };

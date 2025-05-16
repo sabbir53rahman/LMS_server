@@ -13,7 +13,7 @@ connectDB();
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://lms-client-wxa2.onrender.com"],
+    origin: [ "https://lms-client-wxa2.onrender.com","http://localhost:3000"],
     credentials: true,
   })
 );
