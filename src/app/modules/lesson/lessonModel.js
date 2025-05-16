@@ -4,8 +4,6 @@ const lessonSchema = new mongoose.Schema(
   {
     title: { type: String, required: true },
     videoUrl: String,
-    pdfUrl: String,
-    quiz: Array,
     course: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
@@ -16,5 +14,4 @@ const lessonSchema = new mongoose.Schema(
 );
 
 const Lesson = mongoose.model("Lesson", lessonSchema);
-
 export default Lesson;

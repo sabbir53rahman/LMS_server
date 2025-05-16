@@ -1,10 +1,11 @@
-const express = require("express");
-const { courseController } = require("./courseController");
+import { courseController } from "./courseController.js";
+
+import express from "express";
 
 const router = express.Router();
 
 router.get("/", courseController.getAllCourses);
 router.get("/:id", courseController.getCourseById);
-router.post("/", courseController.createCourse); // protect with auth middleware later
+router.post("/", courseController.createCourse);
 
 export const courseRoute = router;

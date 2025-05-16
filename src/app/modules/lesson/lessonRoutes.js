@@ -1,5 +1,6 @@
-const express = require("express");
-const { lessonController } = require("./lessonController");
+import { lessonController } from "./lessonController.js";
+
+import express from "express";
 
 const router = express.Router();
 

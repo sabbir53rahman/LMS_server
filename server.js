@@ -1,15 +1,17 @@
 // server.js
-const express = require("express");
-const dotenv = require("dotenv");
-const connectDB = require("./config/db");
-const { courseRoute } = require("./src/app/modules/course/courseRoutes");
-const { userRoute } = require("./src/app/modules/user/userRoutes");
-const { lessonRoute } = require("./src/app/modules/lesson/lessonRoutes");
+import express from "express";
+import dotenv from "dotenv";
+import connectDB from "./config/db.js";
+import cors from "cors";
+import { courseRoute } from "./src/app/modules/course/courseRoutes.js";
+import { userRoute } from "./src/app/modules/user/userRoutes.js";
+import { lessonRoute } from "./src/app/modules/lesson/lessonRoutes.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json());
 
 app.use("/api/v1/users", userRoute);
