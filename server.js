@@ -6,6 +6,7 @@ import cors from "cors";
 import { courseRoute } from "./src/app/modules/course/courseRoutes.js";
 import { userRoute } from "./src/app/modules/user/userRoutes.js";
 import { lessonRoute } from "./src/app/modules/lesson/lessonRoutes.js";
+import { likeRouter } from "./src/app/modules/like/likeRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/courses", courseRoute);
 app.use("/api/v1/lessons", lessonRoute);
+app.use("/api/v1/likes", likeRouter);
 
 const PORT = process.env.PORT || 5000;
 

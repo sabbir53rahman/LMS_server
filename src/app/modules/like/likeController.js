@@ -1,4 +1,4 @@
-import Like from "./likeModel";
+import Like from "./likeModel.js";
 
 
 const addLike = async (req, res) => {

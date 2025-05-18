@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import User from "./userModel.js";
+import { generateToken } from "../../jwt/generateToken.js";
 
 // Get all users
 const getUsers = async (req, res) => {
@@ -11,20 +12,19 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Create a new user
+// Create a new user and return JWT
 const createUser = async (req, res) => {
   try {
     const { name, email, role, uid } = req.body;
 
-    // Basic validation
     if (!name || !email || !role || !uid) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check if user with this email or uid already exists
     const existingUser = await User.findOne({
       $or: [{ email }, { uid }],
     });
+
     if (existingUser) {
       return res
         .status(409)
@@ -34,7 +34,9 @@ const createUser = async (req, res) => {
     const user = new User({ name, email, role, uid });
     await user.save();
 
-    res.status(201).json(user);
+    const token = generateToken(user);
+
+    res.status(201).json({ user, token });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -57,13 +59,13 @@ const getUserById = async (req, res) => {
   }
 };
 
-// Get the current user by UID (from frontend)
+// Get the current user by email (from frontend)
 const getCurrentUser = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email } = req.query; // <-- use query instead of body
 
     if (!email) {
-      return res.status(400).json({ message: "email is required" });
+      return res.status(400).json({ message: "Email is required" });
     }
 
     const user = await User.findOne({ email });
@@ -78,13 +80,35 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+// login
+const loginUser = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const token = generateToken(user);
+    res.status(200).json({ user, token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Update a user by ID
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const updatedUser = await User.findByIdAndUpdate(id, req.body, {
       new: true,
-      runValidators: true, 
+      runValidators: true,
     });
 
     if (!updatedUser)
@@ -119,4 +143,5 @@ export const userController = {
   getCurrentUser,
   updateUser,
   deleteUser,
+  loginUser,
 };
