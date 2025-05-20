@@ -3,7 +3,7 @@ import { courseController } from "./courseController.js";
 
 import express from "express";
 import { courseValidationSchema } from "./courseValidation.js";
-import { authMiddleware } from "../../jwt/authMiddleware.js";
+import { protect } from "../../jwt/authMiddleware.js";
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.get("/", courseController.getAllCourses);
 router.get("/:id", courseController.getCourseById);
 router.post(
   "/",
-  authMiddleware,
+  protect,
   validationMiddleware(courseValidationSchema),
   courseController.createCourse
 );

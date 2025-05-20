@@ -3,14 +3,14 @@ import { lessonController } from "./lessonController.js";
 
 import express from "express";
 import { lessonValidationSchema } from "./lessonValidation.js";
-import { authMiddleware } from "../../jwt/authMiddleware.js";
+import { protect } from "../../jwt/authMiddleware.js";
 
 const router = express.Router();
 
 // FIXED ROUTE ORDER
 router.post(
   "/",
-  authMiddleware,
+  protect,
   validationMiddleware(lessonValidationSchema),
   lessonController.addLesson
 );
