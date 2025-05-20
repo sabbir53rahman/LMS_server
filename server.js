@@ -16,6 +16,7 @@ app.use(
   cors({
     origin: [ "https://lms-client-wxa2.onrender.com","http://localhost:3000"],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
