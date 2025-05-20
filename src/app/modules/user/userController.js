@@ -62,19 +62,7 @@ const getUserById = async (req, res) => {
 // Get the current user by email (from frontend)
 const getCurrentUser = async (req, res) => {
   try {
-    const { email } = req.query; // <-- use query instead of body
-
-    if (!email) {
-      return res.status(400).json({ message: "Email is required" });
-    }
-
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.status(200).json(user);
+    res.status(200).json(req.user);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
