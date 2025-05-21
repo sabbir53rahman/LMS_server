@@ -15,5 +15,12 @@ router.post(
   validationMiddleware(courseValidationSchema),
   courseController.createCourse
 );
+router.get("/user/:userId", courseController.getCoursesByUser);
+router.get("/earnings/:teacherId", courseController.getTeacherEarnings);
+router.get(
+  "/last-enrollments/:teacherId",
+  courseController.getLast10EnrollmentsForTeacher
+);
+router.delete("/:id", protect, courseController.deleteCourse);
 
 export const courseRoute = router;

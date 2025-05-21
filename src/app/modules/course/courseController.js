@@ -1,3 +1,4 @@
+import Enrole from "../enroleCourse/enroleModel.js";
 import Lesson from "../lesson/lessonModel.js";
 import Course from "./courseModel.js";
 
@@ -13,6 +14,88 @@ const getCourseById = async (req, res) => {
     .populate("teacher", "name")
     .populate("lessons");
   res.json(course);
+};
+
+// Get courses created by a specific teacher/user
+const getCoursesByUser = async (req, res) => {
+  const userId = req.params.userId;
+
+  try {
+    const courses = await Course.find({ teacher: userId })
+      .populate("lessons")
+      .populate("teacher", "name");
+    res.json(courses);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getTeacherEarnings = async (req, res) => {
+  const teacherId = req.params.teacherId;
+
+  try {
+    // 1. Find all courses by this teacher
+    const teacherCourses = await Course.find({ teacher: teacherId });
+
+    // 2. Extract course IDs
+    const courseIds = teacherCourses.map((course) => course._id);
+
+    // 3. Find all enrollments where course is in courseIds
+    const enrollments = await Enrole.find({ course: { $in: courseIds } });
+
+    // 4. Sum the price of enrolled courses
+    let totalEarnings = 0;
+
+    teacherCourses.forEach((course) => {
+      // count how many times this course is enrolled
+      const count = enrollments.filter(
+        (enroll) => enroll.course.toString() === course._id.toString()
+      ).length;
+
+      totalEarnings += course.price * count;
+    });
+
+    res.json({ totalEarnings });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to calculate earnings" });
+  }
+};
+
+const getLast10EnrollmentsForTeacher = async (req, res) => {
+  const teacherId = req.params.teacherId;
+
+  try {
+    // 1. Find all courses by this teacher
+    const teacherCourses = await Course.find({ teacher: teacherId }, "_id");
+
+    // 2. Extract course IDs
+    const courseIds = teacherCourses.map((course) => course._id);
+
+    if (courseIds.length === 0) {
+      return res.json({ lastEnrollments: [] }); // no courses, return empty
+    }
+
+    // 3. Find last 10 enrollments for those courses,
+    const lastEnrollments = await Enrole.find({ course: { $in: courseIds } })
+      .sort({ createdAt: -1 }) // newest first
+      .limit(10)
+      .populate({
+        path: "course",
+        select: "title",
+      })
+      .populate({
+        path: "user",
+        select: "name email", // adjust fields as you want
+      })
+      .exec();
+
+    // 4. Return the enrollments
+    res.json({ lastEnrollments });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to get last enrollments" });
+  }
 };
 
 // Create course with lessons
@@ -60,8 +143,47 @@ const createCourse = async (req, res) => {
   }
 };
 
+const deleteCourse = async (req, res) => {
+  const courseId = req.params.id;
+  const teacherId = req.user._id; // assuming you have middleware that sets req.user with the logged-in user's info
+
+  try {
+    // Find the course by ID
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    // Check if the logged-in user is the teacher of the course
+    if (course.teacher.toString() !== teacherId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete this course" });
+    }
+
+    // Delete lessons associated with the course
+    await Lesson.deleteMany({ course: courseId });
+
+    // Delete enrollments associated with the course
+    await Enrole.deleteMany({ course: courseId });
+
+    // Delete the course itself
+    await Course.findByIdAndDelete(courseId);
+
+    res.json({ message: "Course deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete course" });
+  }
+};
+
 export const courseController = {
   getAllCourses,
   getCourseById,
   createCourse,
+  getCoursesByUser,
+  getTeacherEarnings,
+  getLast10EnrollmentsForTeacher,
+  deleteCourse,
 };
