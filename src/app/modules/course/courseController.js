@@ -62,41 +62,6 @@ const getTeacherEarnings = async (req, res) => {
   }
 };
 
-const getLast10EnrollmentsForTeacher = async (req, res) => {
-  const teacherId = req.params.teacherId;
-
-  try {
-    // 1. Find all courses by this teacher
-    const teacherCourses = await Course.find({ teacher: teacherId }, "_id");
-
-    // 2. Extract course IDs
-    const courseIds = teacherCourses.map((course) => course._id);
-
-    if (courseIds.length === 0) {
-      return res.json({ lastEnrollments: [] }); // no courses, return empty
-    }
-
-    // 3. Find last 10 enrollments for those courses,
-    const lastEnrollments = await Enrole.find({ course: { $in: courseIds } })
-      .sort({ createdAt: -1 }) // newest first
-      .limit(10)
-      .populate({
-        path: "course",
-        select: "title",
-      })
-      .populate({
-        path: "user",
-        select: "name email", // adjust fields as you want
-      })
-      .exec();
-
-    // 4. Return the enrollments
-    res.json({ lastEnrollments });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to get last enrollments" });
-  }
-};
 
 // Create course with lessons
 const createCourse = async (req, res) => {
@@ -184,6 +149,5 @@ export const courseController = {
   createCourse,
   getCoursesByUser,
   getTeacherEarnings,
-  getLast10EnrollmentsForTeacher,
   deleteCourse,
 };
