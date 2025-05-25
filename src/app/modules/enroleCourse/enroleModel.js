@@ -16,6 +16,12 @@ const enroleSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    completedLessons: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson", 
+      },
+    ],
   },
   { timestamps: true }
 );

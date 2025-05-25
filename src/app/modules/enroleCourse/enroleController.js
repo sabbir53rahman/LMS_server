@@ -1,12 +1,12 @@
 import Course from "../course/courseModel.js";
 import Enrole from "./enroleModel.js";
+import Lesson from "../lesson/lessonModel.js";
 
 // POST: Enroll in a course
 const enrollCourse = async (req, res) => {
   const { userId, courseId } = req.body;
 
   try {
-    // Check if already enrolled
     const exists = await Enrole.findOne({ user: userId, course: courseId });
     if (exists) {
       return res
@@ -40,14 +40,12 @@ const getLastEnrollmentsOfTeacher = async (req, res) => {
   const { teacherId } = req.params;
 
   try {
-    // Step 1: Get all courses created by the teacher
     const teacherCourses = await Course.find({ teacher: teacherId }).select(
       "_id title"
     );
 
     const courseIds = teacherCourses.map((course) => course._id);
 
-    // Step 2: Find enrollments for those courses
     const enrollments = await Enrole.find({ course: { $in: courseIds } })
       .populate("user", "name email")
       .populate("course", "title")
@@ -70,7 +68,6 @@ const getEnrollmentsByUser = async (req, res) => {
       "title category price thumbnail"
     );
 
-    // Calculate total price spent
     const totalSpent = enrollments.reduce((sum, enrollment) => {
       const price = enrollment.course?.price || 0;
       return sum + price;
@@ -82,9 +79,78 @@ const getEnrollmentsByUser = async (req, res) => {
   }
 };
 
+// GET: Last 3 enrolled courses with progress
+const getRecentProgressByUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const enrollments = await Enrole.find({ user: userId })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .populate({
+        path: "course",
+        select: "title lessons thumbnail",
+        populate: {
+          path: "lessons",
+          select: "_id",
+        },
+      });
+
+    const progress = enrollments.map((enrollment) => {
+      const totalLessons = enrollment.course.lessons.length;
+      const completedLessons = enrollment.completedLessons
+        ? enrollment.completedLessons.length
+        : 0;
+
+      const percentage =
+        totalLessons > 0
+          ? Math.round((completedLessons / totalLessons) * 100)
+          : 0;
+
+      return {
+        courseId: enrollment.course._id,
+        title: enrollment.course.title,
+        thumbnail: enrollment.course.thumbnail,
+        totalLessons,
+        completedLessons,
+        percentage,
+      };
+    });
+
+    res.json(progress);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// PATCH: Update lesson progress
+const updateProgress = async (req, res) => {
+  const { userId, courseId, lessonId } = req.params;
+
+  try {
+    const enrollment = await Enrole.findOne({ user: userId, course: courseId });
+
+    if (!enrollment) {
+      return res.status(404).json({ message: "Enrollment not found." });
+    }
+
+    const alreadyCompleted = enrollment.completedLessons.includes(lessonId);
+    if (!alreadyCompleted) {
+      enrollment.completedLessons.push(lessonId);
+      await enrollment.save();
+    }
+
+    res.status(200).json({ message: "Progress updated successfully." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const enroleController = {
   enrollCourse,
   getAllEnrollments,
   getEnrollmentsByUser,
   getLastEnrollmentsOfTeacher,
+  getRecentProgressByUser,
+  updateProgress, 
 };

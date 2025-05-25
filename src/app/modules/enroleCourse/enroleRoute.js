@@ -3,14 +3,17 @@ import { enroleController } from "./enroleController.js";
 
 const router = express.Router();
 
-// POST /api/v1/enroll - Enroll in a course
 router.post("/", enroleController.enrollCourse);
-
-// GET /api/v1/enroll - Get all enrollments
 router.get("/", enroleController.getAllEnrollments);
-
-// GET /api/v1/enroll/user/:userId - Get enrollments by user
 router.get("/user/:userId", enroleController.getEnrollmentsByUser);
 router.get("/teacher/:teacherId", enroleController.getLastEnrollmentsOfTeacher);
+router.get(
+  "/recent-progress/:userId",
+  enroleController.getRecentProgressByUser
+);
+router.patch(
+  "/progress/:userId/:courseId/:lessonId",
+  enroleController.updateProgress
+);
 
 export const enroleRoute = router;

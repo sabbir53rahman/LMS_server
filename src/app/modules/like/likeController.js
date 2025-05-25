@@ -1,20 +1,33 @@
 import Like from "./likeModel.js";
 
-
 const addLike = async (req, res) => {
   try {
     const { lessonId, userId } = req.body;
 
-    await Like.deleteOne({ lessonId, userId, reaction: "dislike" });
+    // Check if the user already liked
+    const existingLike = await Like.findOne({
+      lessonId,
+      userId,
+      reaction: "like",
+    });
 
-    const newLike = new Like({ lessonId, userId, reaction: "like" });
-    await newLike.save();
+    if (!existingLike) {
+      // Remove existing dislike (if any)
+      await Like.deleteOne({ lessonId, userId, reaction: "dislike" });
 
-    const populatedLike = await Like.findById(newLike._id)
-      .populate("lessonId")
-      .populate("userId");
+      // Add like
+      const newLike = new Like({ lessonId, userId, reaction: "like" });
+      await newLike.save();
 
-    res.status(201).json(populatedLike);
+      const populatedLike = await Like.findById(newLike._id)
+        .populate("lessonId")
+        .populate("userId");
+
+      return res.status(201).json(populatedLike);
+    }
+
+    // If already liked, do nothing
+    res.status(200).json({ message: "Already liked" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -24,16 +37,30 @@ const addDislike = async (req, res) => {
   try {
     const { lessonId, userId } = req.body;
 
-    await Like.deleteOne({ lessonId, userId, reaction: "like" });
+    // Check if the user already disliked
+    const existingDislike = await Like.findOne({
+      lessonId,
+      userId,
+      reaction: "dislike",
+    });
 
-    const newDislike = new Like({ lessonId, userId, reaction: "dislike" });
-    await newDislike.save();
+    if (!existingDislike) {
+      // Remove existing like (if any)
+      await Like.deleteOne({ lessonId, userId, reaction: "like" });
 
-    const populatedDislike = await Like.findById(newDislike._id)
-      .populate("lessonId")
-      .populate("userId");
+      // Add dislike
+      const newDislike = new Like({ lessonId, userId, reaction: "dislike" });
+      await newDislike.save();
 
-    res.status(201).json(populatedDislike);
+      const populatedDislike = await Like.findById(newDislike._id)
+        .populate("lessonId")
+        .populate("userId");
+
+      return res.status(201).json(populatedDislike);
+    }
+
+    // If already disliked, do nothing
+    res.status(200).json({ message: "Already disliked" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -105,7 +132,11 @@ const removeLike = async (req, res) => {
 const removeDislike = async (req, res) => {
   try {
     const { lessonId, userId } = req.query;
-    const result = await Like.deleteOne({ lessonId, userId, reaction: "dislike" });
+    const result = await Like.deleteOne({
+      lessonId,
+      userId,
+      reaction: "dislike",
+    });
 
     res.status(200).json(result);
   } catch (err) {
